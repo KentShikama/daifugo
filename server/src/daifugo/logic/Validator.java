@@ -10,21 +10,22 @@ import java.util.logging.Logger;
 public class Validator {
 
     DaifugoHub hub;
-    private Deck deck = new Deck(true); // Deck with 52 cards + 2 jokers
+
+    private final Deck deck = new Deck(true); // Deck with 52 cards + 2 jokers
     private volatile int time = 60; // The number of seconds per turn.
     private volatile int winPoints = 30; // The number of points won per win
 
     /* Non-Rotation Variables */
     private String[] connectedPlayersID; // These clients are the ones who are actually playing
-    private ArrayList<Hand> playerHands = new ArrayList<Hand>();
-    private TreeMap<String, Integer> handCount = new TreeMap<String, Integer>();
-    private Hand handd = new Hand(); // Hand for table's discard pile
-    public boolean kakumei;
+    private final ArrayList<Hand> playerHands = new ArrayList<>();
+    private final TreeMap<String, Integer> handCount = new TreeMap<>();
+    private final Hand handd = new Hand(); // Hand for table's discard pile
+    private boolean kakumei;
     private int readyCount; // Checks how many people have pressed the "deal" button
     private boolean gameInProgress;
     /* Rotation Variables */
-    private Hand handt = new Hand(); // Hand for table
-    private Hand previous = new Hand(); // Hand played by the opponent last turn
+    private final Hand handt = new Hand(); // Hand for table
+    private final Hand previous = new Hand(); // Hand played by the opponent last turn
     private int skipped;
     private boolean impossible;
     private int shibarsprep; // To check if the next turn you can shibar it.
@@ -41,79 +42,28 @@ public class Validator {
     private int throwCount;
     private boolean chombo;
     private boolean played; // Did the current player play any cards?
-    public boolean invalid;
     private int table; // The amount of cards played on the table, (aka now.getCardCount() when not give/throw)
     private Hand now = new Hand(); // Hand played by current player
     private boolean end; // To see if the turn should be ended for the CP
-    public int jokerReceived; // See if joker was used
-    Timer timer;
-    private int illegalMoveCount;
-    private TreeMap<String, Integer> timeOutCount = new TreeMap<>();
-    public ArrayList<String> dealAgree = new ArrayList<>();
+    private boolean invalid;
 
-    boolean dealTimer = false;
-    Timer dealTimerObject;
+    private Timer timer;
+    private int illegalMoveCount;
+    private final TreeMap<String, Integer> timeOutCount = new TreeMap<>();
+
+    private boolean dealTimer = false;
+    private Timer dealTimerObject;
+
+    public int jokerReceived; // See if joker was used
+    public ArrayList<String> dealAgree = new ArrayList<>();
 
     public Validator(DaifugoHub hub) {
         this.hub = hub;
     }
 
-    private void resumeTimer() {
-        this.timer = new Timer();
-        this.timer.schedule(new SwitchTask(), time * 1000);
-    }
-
-    private void pauseTimer() {
-        this.timer.cancel();
-    }
-
-    class SwitchTask extends TimerTask {
-
-        @Override
-        public void run() {
-            if (timeOutCount.get(hub.getCurrentPlayerName()) == null && gameInProgress) {
-                timeOutCount.put(hub.getCurrentPlayerName(), 0);
-                ending();
-            } else if (gameInProgress) {
-                hub.playerDisconnected(hub.getCurrentPlayerName());
-                hub.sendToAll(hub.getCurrentPlayerName() + " disconnects during a game: -10 points!");
-            } else {
-                this.cancel();
-            }
-        }
-    }
-
-    private void resumeDealTimer() {
-        this.dealTimerObject = new Timer();
-        this.dealTimerObject.schedule(new DealTask(), 10000);
-    }
-
-    private void pauseDealTimer() {
-        if (dealTimerObject != null) {
-            this.dealTimerObject.cancel();
-        }
-    }
-
-    class DealTask extends TimerTask {
-
-        @Override
-        public void run() {
-            if (!gameInProgress) {
-                dealTimer = true;
-                deal("null");
-            } else {
-                System.out.println("Deal timer has been activated during game.");
-            }
-        }
-
-    }
-
     public void process(Hand message) throws Exception {
-
         pauseTimer();
-
         now = message;
-        /* First sort by suit and then by value to ensure no mistake during shibars */
         now.sortBySuit();
         now.sortByValue();
 
@@ -131,15 +81,11 @@ public class Validator {
 
             if (away) {
                 end = false;
-                /* Updates the state, indirectly the graphics. */
                 hub.sendState();
                 resumeTimer();
                 return;
             }
-
-            /* Updates the state, indirectly the graphics. */
             hub.sendState();
-
         } else if (away) {
             boolean random = away(now);
             /* If the give input is invalid */
@@ -151,15 +97,9 @@ public class Validator {
             }
             away = false;
             end = true;
-
-//            hub.getDisplay().addToTranscript(hub.getCurrentPlayerName() + " throws away the following: " + now.toString());
-            /* Updates the state, indirectly the graphics. */
             hub.sendState();
         } else {
-
-//            hub.getDisplay().addToTranscript(hub.getCurrentPlayerName() + " plays the following: " + now.toString());
-
-            /* Situation if you skipped turn (must press end button)*/
+            /* Situation if you skipped turn (must press end button) */
             if (now.getCardCount() == 0) {
                 played = false;
                 skipped++;
@@ -174,7 +114,7 @@ public class Validator {
                     if (jack) {
                         reversi = !reversi;
                     }
-                    if (kakumei) {
+                    if (isKakumei()) {
                         reversi = !reversi;
                     }
                     hub.sendState();
@@ -204,9 +144,9 @@ public class Validator {
 
             table = now.getCardCount(); // Sets amount of cards played to the table count
 
-            if (!kakumei && table >= 4) {
+            if (!isKakumei() && table >= 4) {
                 hub.sendToOne(hub.getCurrentPlayerName(), true);
-            } else if (kakumei && table >= 4) {
+            } else if (isKakumei() && table >= 4) {
                 hub.sendToOne(hub.getCurrentPlayerName(), false);
             }
 
@@ -224,102 +164,55 @@ public class Validator {
         }
     }
 
-
-    /* Methods to get states things */
-    public DaifugoState getCurrentPlayerState() {
-        int index = 0;
-        String[] players = this.getConnectedPlayersID();
-        for (int i = 0; i < players.length; i++) {
-            if (hub.getCurrentPlayerName() == null ? players[i] == null : hub.getCurrentPlayerName().equals(players[i])) {
-                index = i;
-                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
-            } else {
-                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
-            }
-        }
-        getPlayerHands().get(index).sortBySuit();
-        getPlayerHands().get(index).sortByValue();
-
-        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.PLAY,
-                handCount, time, shibars, kakumei, jack, geki, impossible,
-                give, away, played);
-    }
-
-    public DaifugoState getWaitingPlayerState(String playerID) {
-        int index = 0;
-        String[] players = this.getConnectedPlayersID();
-        for (int i = 0; i < players.length; i++) {
-            if (playerID == null ? players[i] == null : playerID.equals(players[i])) {
-                index = i;
-            } else {
-                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
-            }
-        }
-        getPlayerHands().get(index).sortBySuit();
-        getPlayerHands().get(index).sortByValue();
-
-        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.WAIT_FOR_PLAY,
-                handCount, time, shibars, kakumei, jack, geki, impossible,
-                give, away, played);
-    }
-
-    public DaifugoState getVisitngPlayerState(String playerID) {
-        String[] players = this.getConnectedPlayersID();
-        for (int i = 0; i < players.length; i++) {
-            handCount.put(players[i], getPlayerHands().get(i).getCardCount());
-        }
-
-        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, null, handt, table, handd, DaifugoState.VISIT,
-                handCount, time, shibars, kakumei, jack, geki, impossible,
-                give, away, played);
-    }
-
-    /* Methods that are included in "process()" */
     private void check() {
-
-        /**
-         * Note: anything that comes before the checking of "invalid" must be
-         * set back to false in the block following this method call
-         */
-
         /* If the jack is still true because its the same pile after a jack has been played then enable a reverse */
         if (jack) {
             reversi = !reversi;
         }
 
         /* If kakumei is true then reverse the reversei (can stack with jack)  */
-        if (kakumei) {
+        if (isKakumei()) {
             reversi = !reversi;
         }
 
         invalid = false; // Assume invalid is false at first
 
-        /* Situation if you played a single card */
+        if (handleSingleCardSituation()) {
+            return;
+        }
+
+        if (handleTwoCardSituation()) {
+            return;
+        }
+
+        handleThreePlusCardSituation();
+
+    }
+
+    private boolean handleSingleCardSituation() {
         if (now.getCardCount() == 1) {
             /* The previous must be none or ... */
             if (previous.getCardCount() == 0) {
                 // any card is valid
-		/* Check each card for specifics using double check */
+                /* Check each card for specifics using double check */
                 doubleCheck(now);
                 invalid = false;
                 shibarsprep = 1;
-            } /* The previous must be one */ else if (previous.getCardCount() == 1) {
+            } /* The previous must be one */ /* The previous must be one */ else if (previous.getCardCount() == 1) {
                 /* If card is a joker it will be valid no matter what */
                 if (now.getCard(0).getSuit() == Card.JOKER) {
                     doubleCheck(now);
                     invalid = false;
-                    return;
+                    return true;
                 }
-
                 if (previous.getCard(0).getValue() == Card.JOKER
                         && (now.getCard(0).getValue() == 3 && now.getCard(0).getSuit() == Card.SPADES)) {
                     // Valid + Situation if joker was put down before and
                     // now a spade of 3 is put
                     impossible = true;
                     invalid = false;
-                    return;
+                    return true;
                 }
-
                 // Card that is greater/lesser than prev or joker
                 if ((!reversi && (now.getCard(0).getValue() <= previous.getCard(0).getValue()))
                         || (reversi && (now.getCard(0).getValue() >= previous.getCard(0).getValue()))) {
@@ -330,7 +223,7 @@ public class Validator {
                             + now.getCard(0).toString()
                             + " is invalid because value must be higher/lower.");
                     invalid = true;
-                    return;
+                    return true;
                 } else if (shibars
                         && (now.getCard(0).getSuit() != previous.getCard(0).getSuit())) {
                     // Invalid shibars is on so card must be same as
@@ -341,14 +234,14 @@ public class Validator {
                             + now.getCard(0).toString()
                             + " is invalid because it doesn't match the previouis suit.");
                     invalid = true;
-                    return;
+                    return true;
                 } else if (geki && ((!reversi && now.getCard(0).getValue() != previous.getCard(0).getValue() + 1)
                         || (reversi && now.getCard(0).getValue() + 1 != previous.getCard(0).getValue()))) {
                     hub.sendToOne(
                             hub.getCurrentPlayerName(),
                             "The cards are invalid because the pile is currently in geki shiba mode.");
                     invalid = true;
-                    return;
+                    return true;
                 } else {
                     // Valid
                     /* Check each card for specifics using double check */
@@ -363,11 +256,13 @@ public class Validator {
                         + now.getCard(0).toString()
                         + " is invalid because it is currently not a single card pile.");
                 invalid = true;
-                return;
+                return true;
             }
         }
+        return false;
+    }
 
-        /* Situation if you played two cards */
+    private boolean handleTwoCardSituation() {
         if (now.getCardCount() == 2) {
             int length = now.getCardCount();
             /* The previous must be 1 or none */
@@ -384,7 +279,7 @@ public class Validator {
                                 + now.getCard(1).toString()
                                 + " is invalid because their value isn't the same.");
                         invalid = true;
-                        return;
+                        return true;
                     }
                 }
                 if (!invalid) {
@@ -404,7 +299,7 @@ public class Validator {
                                 + now.getCard(1).toString()
                                 + " is invalid because their value isn't the same.");
                         invalid = true;
-                        return;
+                        return true;
                     } else if (((!reversi && (now.getCard(i).getValue() <= previous.getCard(i).getValue()))
                             || (reversi && (now.getCard(i).getValue() >= previous.getCard(i).getValue()))) && now.getCard(i).getValue() != Card.JOKER) {
                         // Invalid card must be lower/higher value or be two jokers
@@ -416,7 +311,7 @@ public class Validator {
                                 + now.getCard(1).toString()
                                 + " is invalid because value must be higher/lower.");
                         invalid = true;
-                        return;
+                        return true;
                     } else if (shibars
                             && (now.getCard(i).getSuit() != previous.getCard(i).getSuit())) {
                         // Invalid shibars is on so card must be same as
@@ -429,15 +324,14 @@ public class Validator {
                                 + now.getCard(1).toString()
                                 + " is invalid because they have the wrong suit.");
                         invalid = true;
-
-                        return;
+                        return true;
                     } else if (geki && ((!reversi && now.getCard(0).getValue() != previous.getCard(0).getValue() + 1)
                             || (reversi && now.getCard(0).getValue() + 1 != previous.getCard(0).getValue()))) {
                         hub.sendToOne(
                                 hub.getCurrentPlayerName(),
                                 "The cards are invalid because the pile is currently in geki shiba mode.");
                         invalid = true;
-                        return;
+                        return true;
                     }
                 }
             } else {
@@ -450,21 +344,18 @@ public class Validator {
                         + now.getCard(1).toString()
                         + " is invalid because it is currently not a double card pile.");
                 invalid = true;
-                return;
+                return true;
             }
-
             if (!invalid) {
                 /* Check each card for specifics using double check */
                 doubleCheck(now);
                 invalid = false;
             }
-
         }
+        return false;
+    }
 
-        /*
-         * Situation if you played 3 or more cards (possibility of a
-         * reversi)
-         */
+    private void handleThreePlusCardSituation() {
         if (now.getCardCount() >= 3) {
             int length = now.getCardCount();
             /**
@@ -502,21 +393,9 @@ public class Validator {
                 return;
             }
 
-
-            /* The previous must be the hand.length or none */
             if (previous.getCardCount() == 0) {
-                /**
-                 * All same value ^ All - 1 same value + joker All - 2 same
-                 * value + 2 jokers All same suit + value offset by one All - 1
-                 * same suit + value offset by one or two + joker All - 2 same
-                 * suit + value offset by one or two or three + 2 jokers
-                 *
-                 */
-                /**
-                 * Check here has already been done above
-                 */
                 if (!invalid) { // Valid
-	      /* Check each card for specifics using double check */
+                    /* Check each card for specifics using double check */
                     shibarsprep = 1;
                     doubleCheck(now);
                     invalid = false;
@@ -528,18 +407,15 @@ public class Validator {
                  * jokers All same suit + value offset by one (great/less) All -
                  * 1 same suit + value offset by one or two (great/less) + joker
                  * All - 2 same suit + value offset by one or two or three
-                 * (great/less) + 2 jokers If shibars is on, then same suit.
+                 * (great/less) + 2 jokers. If shibars is on, then same suit.
                  */
                 for (int i = 0; i < length - 1; i++) {
                     /* Is currently backwards... will bunch up later */
 
                     /*
                      * All not same value (with jokers) or not a legit
-                     * kaidan (This check has already been done above
+                     * kaidan (This check has already been done above).
                      */
-
-                    /* Removed method used to be here */
-                    // 
                     if ((!reversi && (now.getCard(i).getValue() <= previous.getCard(i).getValue()))
                             || (reversi && (now.getCard(i).getValue() >= previous.getCard(i).getValue()))) {
                         // Invalid card must be lower/higher value
@@ -547,7 +423,6 @@ public class Validator {
                                 "The cards are invalid because they must have a higher/lower value.");
                         invalid = true;
                         return;
-
                     } else if (shibars
                             && (now.getCard(i).getSuit() != previous.getCard(i).getSuit())) {
                         // Invalid shibars is on so card must be same as
@@ -588,20 +463,21 @@ public class Validator {
             }
 
         }
-
     }
 
     /**
-     * Checks if the card activates any restrictions
-     *
-     * @param current
+     * Checks if the card(s) activates any restrictions.
      */
     private void doubleCheck(Hand current) {
         int length = current.getCardCount();
-        /**
-         * Method for testings for nines
-         *
-         */
+        checkDoubleNines(length, current);
+        checkShibars(length, current);
+        checkKaidan(length);
+        checkSingleCardRestrictions(length, current);
+
+    }
+
+    private void checkDoubleNines(int length, Hand current) {
         boolean nineMessage = false;
         if (length >= 2) {
             int count = 0;
@@ -619,8 +495,9 @@ public class Validator {
         if (nineMessage) {
             hub.sendToAll(hub.getCurrentPlayerName() + " plays two or more 9's.");
         }
+    }
 
-        /* Method for testings the shibars */
+    private void checkShibars(int length, Hand current) {
         if (shibarsprep == 2 && previous.getCardCount() > 0) {
             int count = 0;
             for (int i = 0; i < length; i++) {
@@ -637,8 +514,9 @@ public class Validator {
                 }
             }
         }
+    }
 
-        /* Method for testing kaidan */
+    private void checkKaidan(int length) {
         if (length >= 3) {
             for (int i = 0; i < length - 1; i++) {
                 if ((now.getCard(i).getSuit() == now.getCard(i + 1).getSuit())
@@ -647,6 +525,9 @@ public class Validator {
                 }
             }
         }
+    }
+
+    private void checkSingleCardRestrictions(int length, Hand current) {
         boolean eightMessage = false;
         boolean fiveMessage = false;
         for (int i = 0; i < length; i++) {
@@ -679,7 +560,6 @@ public class Validator {
         } else if (fiveMessage) {
             hub.sendToAll(hub.getCurrentPlayerName() + " plays one or more 5's; your turn might have been skipped.");
         }
-
     }
 
     private boolean give(Hand now) {
@@ -735,6 +615,118 @@ public class Validator {
         }
 
         return true;
+    }
+
+    public DaifugoState getCurrentPlayerState() {
+        int index = 0;
+        String[] players = this.getConnectedPlayersID();
+        for (int i = 0; i < players.length; i++) {
+            if (hub.getCurrentPlayerName() == null ? players[i] == null : hub.getCurrentPlayerName().equals(players[i])) {
+                index = i;
+                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
+            } else {
+                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
+            }
+        }
+        getPlayerHands().get(index).sortBySuit();
+        getPlayerHands().get(index).sortByValue();
+
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.PLAY,
+                handCount, time, shibars, isKakumei(), jack, geki, impossible,
+                give, away, played);
+    }
+
+    public DaifugoState getWaitingPlayerState(String playerID) {
+        int index = 0;
+        String[] players = this.getConnectedPlayersID();
+        for (int i = 0; i < players.length; i++) {
+            if (playerID == null ? players[i] == null : playerID.equals(players[i])) {
+                index = i;
+            } else {
+                handCount.put(players[i], getPlayerHands().get(i).getCardCount());
+            }
+        }
+        getPlayerHands().get(index).sortBySuit();
+        getPlayerHands().get(index).sortByValue();
+
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.WAIT_FOR_PLAY,
+                handCount, time, shibars, isKakumei(), jack, geki, impossible,
+                give, away, played);
+    }
+
+    public DaifugoState getVisitngPlayerState(String playerID) {
+        String[] players = this.getConnectedPlayersID();
+        for (int i = 0; i < players.length; i++) {
+            handCount.put(players[i], getPlayerHands().get(i).getCardCount());
+        }
+
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, null, handt, table, handd, DaifugoState.VISIT,
+                handCount, time, shibars, isKakumei(), jack, geki, impossible,
+                give, away, played);
+    }
+
+    public void deal(String playerID) {
+
+        if (isGameInProgress() == true) {
+            hub.sendToAll("The game is currently in progress. If you have just logged in, please wait for the \"esoteric\" to send you the current game status.");
+            return;
+        }
+
+        readyCount++;
+
+        if (readyCount == 2 && !dealTimer) {
+            hub.sendToAll("The game will start in 10 seconds... \n"
+                    + "Please press the start button if you wish to join.");
+            this.resumeDealTimer();
+            dealAgree.add(playerID);
+            return;
+        } else if (dealTimer) {
+            dealTimer = false;
+            this.pauseDealTimer();
+            gameInProgress = true;
+            // Start
+        } else {
+            if (dealAgree.size() < 6) {
+                dealAgree.add(playerID);
+            } else {
+                hub.sendToAll("Six people have already registered...please wait for the next game to start or switch rooms.");
+            }
+            return;
+        }
+
+        deck.shuffle();
+
+        connectedPlayersID = dealAgree.toArray(new String[dealAgree.size()]);
+        int number = ThreadLocalRandom.current().nextInt(0, dealAgree.size());
+        hub.setCurrentPlayer(connectedPlayersID[number]);
+        String order = "The turn order for this round is as follows: ";
+        for (String player : connectedPlayersID) {
+            order += player + " -> ";
+        }
+        order = order.substring(0, order.length() - 4);
+        hub.sendToAll(order);
+
+        /* Create the number of hands equal to the number of players */
+        for (int i = 0; i < hub.getNumberOfConnectedPlayers(); i++) {
+            getPlayerHands().add(new Hand());
+        }
+
+        /* Deals 14 cards to each player */
+        int cardPerPlayer = 18;
+        if (hub.getNumberOfConnectedPlayers() > 2) {
+            cardPerPlayer = (54 / hub.getNumberOfConnectedPlayers());
+        }
+
+        for (int i = 0; i < cardPerPlayer; i++) {
+            for (Hand hand : getPlayerHands()) {
+                hand.addCard(deck.dealCard());
+            }
+        }
+
+        /* Sends messages */
+        hub.sendState();
+        hub.sendToAll("Dealing cards...");
+        resumeTimer();
     }
 
     /**
@@ -918,7 +910,7 @@ public class Validator {
         geki = false;
         end = false;
         chombo = false;
-        kakumei = false;
+        setKakumei(false);
         reversi = false;
         table = 0;
         shibarsprep = 0;
@@ -952,82 +944,54 @@ public class Validator {
         }
     }
 
-    public void deal(String playerID) {
+    private void resumeTimer() {
+        this.timer = new Timer();
+        this.timer.schedule(new SwitchTask(), time * 1000);
+    }
 
-        if (isGameInProgress() == true) {
-            hub.sendToAll("The game is currently in progress. If you have just logged in, please wait for the \"esoteric\" to send you the current game status.");
-            return;
-        }
+    private void pauseTimer() {
+        this.timer.cancel();
+    }
 
-        readyCount++;
+    private class SwitchTask extends TimerTask {
 
-        if (readyCount == 2 && !dealTimer) {
-            hub.sendToAll("The game will start in 10 seconds... \n"
-                    + "Please press the start button if you wish to join.");
-            this.resumeDealTimer();
-            dealAgree.add(playerID);
-            return;
-        } else if (dealTimer) {
-            dealTimer = false;
-            this.pauseDealTimer();
-            gameInProgress = true;
-            // Start
-        } else {
-            if (dealAgree.size() < 6) {
-                dealAgree.add(playerID);
+        @Override
+        public void run() {
+            if (timeOutCount.get(hub.getCurrentPlayerName()) == null && gameInProgress) {
+                timeOutCount.put(hub.getCurrentPlayerName(), 0);
+                ending();
+            } else if (gameInProgress) {
+                hub.playerDisconnected(hub.getCurrentPlayerName());
+                hub.sendToAll(hub.getCurrentPlayerName() + " disconnects during a game: -10 points!");
             } else {
-                hub.sendToAll("Six people have already registered...please wait for the next game to start or switch rooms.");
+                this.cancel();
             }
-            return;
         }
+    }
 
-//        if (hub.getPlayerList().length == 1) {
-//            hub.sendToAll("There needs to be at least two players for a game to start.");
-//            return;
-//        } else if (hub.getPlayerList().length <= getReadyCount()) {
-//            // Start
-//        } else {
-//            hub.sendToAll("The game will start once " + (hub.getPlayerList().length - getReadyCount()) + " more player(s) presses \"start\"");
-//            return;
-//        }
-        // hub.shutdownServerSocket();
+    private void resumeDealTimer() {
+        this.dealTimerObject = new Timer();
+        this.dealTimerObject.schedule(new DealTask(), 10000);
+    }
 
-        /* Shuffles the deck */
-        deck.shuffle();
-
-        connectedPlayersID = dealAgree.toArray(new String[dealAgree.size()]);
-        int number = ThreadLocalRandom.current().nextInt(0, dealAgree.size());
-        hub.setCurrentPlayer(connectedPlayersID[number]);
-        String order = "The turn order for this round is as follows: ";
-        for (String player : connectedPlayersID) {
-            order += player + " -> ";
+    private void pauseDealTimer() {
+        if (dealTimerObject != null) {
+            this.dealTimerObject.cancel();
         }
-        order = order.substring(0, order.length() - 4);
-        hub.sendToAll(order);
+    }
 
-        /* Create the number of hands equal to the number of players */
-        for (int i = 0; i < hub.getNumberOfConnectedPlayers(); i++) {
-            getPlayerHands().add(new Hand());
-        }
+    private class DealTask extends TimerTask {
 
-        /* Deals 14 cards to each player */
-        int cardPerPlayer = 18;
-        if (hub.getNumberOfConnectedPlayers() > 2) {
-
-            cardPerPlayer = (54 / hub.getNumberOfConnectedPlayers());
-
-        }
-
-        for (int i = 0; i < cardPerPlayer; i++) {
-            for (Hand hand : getPlayerHands()) {
-                hand.addCard(deck.dealCard());
+        @Override
+        public void run() {
+            if (!gameInProgress) {
+                dealTimer = true;
+                deal("null");
+            } else {
+                System.out.println("Deal timer has been activated during game.");
             }
         }
 
-        /* Sends messages */
-        hub.sendState();
-        hub.sendToAll("Dealing cards...");
-        resumeTimer();
     }
 
     /**
@@ -1103,7 +1067,6 @@ public class Validator {
         return gameInProgress;
     }
 
-
     /* Getter and Setter Methods */
     /**
      * @param time the time to set
@@ -1131,5 +1094,13 @@ public class Validator {
      */
     public int getReadyCount() {
         return readyCount;
+    }
+
+    public boolean isKakumei() {
+        return kakumei;
+    }
+
+    public void setKakumei(boolean kakumei) {
+        this.kakumei = kakumei;
     }
 }

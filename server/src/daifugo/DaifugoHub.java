@@ -127,7 +127,7 @@ public class DaifugoHub extends Hub {
             sendToAll(getCurrentPlayerName() + " replaces a joker with the " + card.toString());
         } else if (message instanceof Boolean) {
             boolean hold = (Boolean) message;
-            validator.kakumei = hold;
+            validator.setKakumei(hold);
         } else if (message.equals("reload server")) {
             this.sendToAll("Server is reloading...");
             this.tracker.readXML();
