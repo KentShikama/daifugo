@@ -17,9 +17,6 @@ public class DaifugoHub extends Hub {
     private volatile String currentPlayer;
     private int portRecord;
     private volatile Validator validator = new Validator(this);
-    static final int NEOPHYTE = 23545;
-    static final int AMATEUR = 23546;
-    static final int HIMAJIN = 23547;
     static final int TEST = 23548;
     static final int BLITZ = 23549;
     static final int TOURNAMENT = 23550;
@@ -35,14 +32,6 @@ public class DaifugoHub extends Hub {
     public DaifugoHub(int port) throws IOException {
         super(port);
         portRecord = port;
-//        if (port == DaifugoHub.NEOPHYTE) {
-//            validator.setWinPoints(30);
-//            validator.setTime(80);
-//        } else if (port == DaifugoHub.AMATEUR) {
-//            validator.setWinPoints(40);
-//        } else if (port == DaifugoHub.HIMAJIN) {
-//            validator.setWinPoints(60);
-//        } else 
 
         if (port == DaifugoHub.TEST) {
             validator.setWinPoints(30);

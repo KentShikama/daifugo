@@ -15,31 +15,35 @@ import javax.swing.*;
  */
 public class ClientMain {
 
+    /**
+     * Modify this IP address in order to connect to proper host. If you plan to
+     * test the application from you own computer, use localhost.
+     */
+    private static final String HOST = "localhost"; //162.243.121.40
+
     private DaifugoClient client;
-    private static final String host = "localhost"; //162.243.121.40
     private int port;
     private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    public final int WIDTH = 500;
-    public final int HEIGHT = 300;
-    JFrame frame;
-    JPanel content;
-    JPanel topPanel;
-    JLabel titleMessage;
+    private final int WIDTH = 500;
+    private final int HEIGHT = 300;
+    private JFrame frame;
+    private JPanel content;
+    private JPanel topPanel;
+    private JLabel titleMessage;
     final String[] roomChoices = {"Test", "Blitz", "Tournament"};
-    JPanel roomsRow;
-    JComboBox rooms;
-    JLabel roomsLabel;
-    JPanel usernameRow;
-    JTextField username;
-    JLabel usernameLabel;
-    JPanel passwordRow;
-    JPasswordField password;
-    JLabel passwordLabel;
-    JPanel bottomPanel;
-    JButton loginButton;
-    JButton cancelButton;
-
-    JButton createNew;
+    private JPanel roomsRow;
+    private JComboBox rooms;
+    private JLabel roomsLabel;
+    private JPanel usernameRow;
+    private JTextField username;
+    private JLabel usernameLabel;
+    private JPanel passwordRow;
+    private JPasswordField password;
+    private JLabel passwordLabel;
+    private JPanel bottomPanel;
+    private JButton loginButton;
+    private JButton cancelButton;
+    private JButton createNew;
 
     ClientMain() {
         topPanel();
@@ -118,7 +122,7 @@ public class ClientMain {
             throw new Exception("Unsupported Room");
         }
         try {
-            this.client = new DaifugoClient(host, this.port, readUsername(), readPassword());
+            this.client = new DaifugoClient(HOST, this.port, readUsername(), readPassword());
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), "Application cannot connect to the room. The room is most likely full. If you cannot connect to any room, there might be a problem with your network settings.");
             System.exit(1);
@@ -128,7 +132,7 @@ public class ClientMain {
     private void createAccount() throws Exception {
         this.port = 23551;
         try {
-            this.client = new DaifugoClient(host, this.port, readUsername(), readPassword());
+            this.client = new DaifugoClient(HOST, this.port, readUsername(), readPassword());
         } catch (IOException e) {
             JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), "Application failed to create new account.");
             System.exit(1);

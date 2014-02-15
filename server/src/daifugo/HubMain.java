@@ -6,15 +6,12 @@ import java.util.Scanner;
 
 public class HubMain {
 
-    private final static int[] PORT = {23545, 23546, 23547, 23548, 23549, 23550, 23551};
+    private final static int[] PORT = {23549, 23550, 23551};
     ArrayList<DaifugoHub> esoterics = new ArrayList<>();
 
     HubMain() {
-        /**
-         * Reset to 0 later
-         */
         try {
-            for (int i = 3; i < PORT.length; i++) {
+            for (int i = 0; i < PORT.length; i++) {
                 esoterics.add(new DaifugoHub(PORT[i]));
             }
         } catch (IOException e) {
