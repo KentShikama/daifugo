@@ -123,14 +123,25 @@ public final class Tracker {
         if (port == DaifugoHub.ACCOUNT) {
             String regex = "^[A-Z][A-Za-z\\s]{1,10}$";
             if (!name.isEmpty() && !password.isEmpty() && name.matches(regex)) {
-                newAccount = new File(getUserhome() + "/account.txt");
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(newAccount, true))) {
-                    writer.append(name + "\n");
-                    writer.append(password + "\n");
-                    return "accountCreated";
-                } catch (IOException e) {
-                    return "failedAccountCreation";
+                for (Player player: players) {
+                    if (player.getUsername().equals(name)) {
+                        return "duplicateAccountCreation"; 
+                    }
                 }
+                Element player = new Element("player");
+                Element usernameElement = new Element("username").setText(name);
+                Element passwordElement = new Element("password").setText(password);
+                Element pointsElement = new Element("points").setText("0");
+                Element tournamentElement = new Element("tournament").setText("0");
+                player.addContent(usernameElement);
+                player.addContent(passwordElement);
+                player.addContent(pointsElement);
+                player.addContent(tournamentElement);
+                Element root = xmldoc.getRootElement();
+                root.addContent(player);
+                writeXML();
+                readXML();
+                return "accountCreated";
             }
             return "failedAccountCreation";
         }

@@ -141,15 +141,6 @@ public class ClientMain {
 
     private int readPort() {
         String room = (String) this.rooms.getSelectedItem();
-        if (room.equalsIgnoreCase("Neophyte")) {
-            return 23545;
-        }
-        if (room.equalsIgnoreCase("Amateur")) {
-            return 23546;
-        }
-        if (room.equalsIgnoreCase("Himajin")) {
-            return 23547;
-        }
         if (room.equalsIgnoreCase("Test")) {
             return 23548;
         }

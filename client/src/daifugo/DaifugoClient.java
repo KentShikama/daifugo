@@ -80,7 +80,7 @@ public class DaifugoClient extends Client {
             out.writeObject(password);
             String authentic = (String) in.readObject();
             if (authentic.equals("successAccount")) {
-                JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), username + ", your account will be manually verified. This process may take a day or two. For now you may login using \"Guest\" and \"Titans\".");
+                JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), username + ", your account has been succesfully created.");
                 new ClientMain("Welcome To Daifugo");
             } else if (authentic.equals("failAccount")) {
                 JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), username + ", your account could not be created. Make sure that you are using your first name as your username with the first letter capitalized.");

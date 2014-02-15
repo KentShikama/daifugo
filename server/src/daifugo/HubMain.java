@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class HubMain {
 
-    private final static int[] PORT = {23549, 23550, 23551};
+    private final static int[] PORT = {23548, 23549, 23550, 23551};
     ArrayList<DaifugoHub> esoterics = new ArrayList<>();
 
     HubMain() {
