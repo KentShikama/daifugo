@@ -71,12 +71,12 @@ public class Validator {
 
         @Override
         public void run() {
-            if (timeOutCount.get(hub.getCurrentPlayer()) == null && gameInProgress) {
-                timeOutCount.put(hub.getCurrentPlayer(), 0);
+            if (timeOutCount.get(hub.getCurrentPlayerName()) == null && gameInProgress) {
+                timeOutCount.put(hub.getCurrentPlayerName(), 0);
                 ending();
             } else if (gameInProgress) {
-                hub.playerDisconnected(hub.getCurrentPlayer());
-                hub.sendToAll(hub.getCurrentPlayer() + " disconnects during a game: -10 points!");
+                hub.playerDisconnected(hub.getCurrentPlayerName());
+                hub.sendToAll(hub.getCurrentPlayerName() + " disconnects during a game: -10 points!");
             } else {
                 this.cancel();
             }
@@ -121,7 +121,7 @@ public class Validator {
             boolean random = give(now);
             /* If the give input is invalid */
             if (!random) {
-                hub.sendToOne(hub.getCurrentPlayer(), "Invalid card(s) for giving.");
+                hub.sendToOne(hub.getCurrentPlayerName(), "Invalid card(s) for giving.");
                 hub.sendState();
                 resumeTimer();
                 return;
@@ -144,7 +144,7 @@ public class Validator {
             boolean random = away(now);
             /* If the give input is invalid */
             if (!random) {
-                hub.sendToOne(hub.getCurrentPlayer(), "Invalid card(s) for throwing.");
+                hub.sendToOne(hub.getCurrentPlayerName(), "Invalid card(s) for throwing.");
                 hub.sendState();
                 resumeTimer();
                 return;
@@ -152,12 +152,12 @@ public class Validator {
             away = false;
             end = true;
 
-//            hub.getDisplay().addToTranscript(hub.getCurrentPlayer() + " throws away the following: " + now.toString());
+//            hub.getDisplay().addToTranscript(hub.getCurrentPlayerName() + " throws away the following: " + now.toString());
             /* Updates the state, indirectly the graphics. */
             hub.sendState();
         } else {
 
-//            hub.getDisplay().addToTranscript(hub.getCurrentPlayer() + " plays the following: " + now.toString());
+//            hub.getDisplay().addToTranscript(hub.getCurrentPlayerName() + " plays the following: " + now.toString());
 
             /* Situation if you skipped turn (must press end button)*/
             if (now.getCardCount() == 0) {
@@ -182,8 +182,8 @@ public class Validator {
                     if (illegalMoveCount == 0) {
                         // Do nothing
                     } else if (illegalMoveCount > 0) {
-                        hub.updatePoints(hub.getCurrentPlayer(), -2);
-                        hub.sendToAll(hub.getCurrentPlayer() + " attempts more than one illegal move in a single turn: -2 points.");
+                        hub.updatePoints(hub.getCurrentPlayerName(), -2);
+                        hub.sendToAll(hub.getCurrentPlayerName() + " attempts more than one illegal move in a single turn: -2 points.");
                     }
                     illegalMoveCount++;
                     return;
@@ -205,9 +205,9 @@ public class Validator {
             table = now.getCardCount(); // Sets amount of cards played to the table count
 
             if (!kakumei && table >= 4) {
-                hub.sendToOne(hub.getCurrentPlayer(), true);
+                hub.sendToOne(hub.getCurrentPlayerName(), true);
             } else if (kakumei && table >= 4) {
-                hub.sendToOne(hub.getCurrentPlayer(), false);
+                hub.sendToOne(hub.getCurrentPlayerName(), false);
             }
 
             if (!(give || away)) {
@@ -230,7 +230,7 @@ public class Validator {
         int index = 0;
         String[] players = this.getConnectedPlayersID();
         for (int i = 0; i < players.length; i++) {
-            if (hub.getCurrentPlayer() == null ? players[i] == null : hub.getCurrentPlayer().equals(players[i])) {
+            if (hub.getCurrentPlayerName() == null ? players[i] == null : hub.getCurrentPlayerName().equals(players[i])) {
                 index = i;
                 handCount.put(players[i], getPlayerHands().get(i).getCardCount());
             } else {
@@ -240,7 +240,7 @@ public class Validator {
         getPlayerHands().get(index).sortBySuit();
         getPlayerHands().get(index).sortByValue();
 
-        return new DaifugoState(hub.getCurrentPlayer(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.PLAY,
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.PLAY,
                 handCount, time, shibars, kakumei, jack, geki, impossible,
                 give, away, played);
     }
@@ -258,7 +258,7 @@ public class Validator {
         getPlayerHands().get(index).sortBySuit();
         getPlayerHands().get(index).sortByValue();
 
-        return new DaifugoState(hub.getCurrentPlayer(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.WAIT_FOR_PLAY,
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, getPlayerHands().get(index), handt, table, handd, DaifugoState.WAIT_FOR_PLAY,
                 handCount, time, shibars, kakumei, jack, geki, impossible,
                 give, away, played);
     }
@@ -269,7 +269,7 @@ public class Validator {
             handCount.put(players[i], getPlayerHands().get(i).getCardCount());
         }
 
-        return new DaifugoState(hub.getCurrentPlayer(), connectedPlayersID, null, handt, table, handd, DaifugoState.VISIT,
+        return new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, null, handt, table, handd, DaifugoState.VISIT,
                 handCount, time, shibars, kakumei, jack, geki, impossible,
                 give, away, played);
     }
@@ -325,7 +325,7 @@ public class Validator {
                         || (reversi && (now.getCard(0).getValue() >= previous.getCard(0).getValue()))) {
                     // Invalid card must be lower/higher value
                     hub.sendToOne(
-                            hub.getCurrentPlayer(),
+                            hub.getCurrentPlayerName(),
                             "The card "
                             + now.getCard(0).toString()
                             + " is invalid because value must be higher/lower.");
@@ -336,7 +336,7 @@ public class Validator {
                     // Invalid shibars is on so card must be same as
                     // previous
                     hub.sendToOne(
-                            hub.getCurrentPlayer(),
+                            hub.getCurrentPlayerName(),
                             "The card "
                             + now.getCard(0).toString()
                             + " is invalid because it doesn't match the previouis suit.");
@@ -345,7 +345,7 @@ public class Validator {
                 } else if (geki && ((!reversi && now.getCard(0).getValue() != previous.getCard(0).getValue() + 1)
                         || (reversi && now.getCard(0).getValue() + 1 != previous.getCard(0).getValue()))) {
                     hub.sendToOne(
-                            hub.getCurrentPlayer(),
+                            hub.getCurrentPlayerName(),
                             "The cards are invalid because the pile is currently in geki shiba mode.");
                     invalid = true;
                     return;
@@ -358,7 +358,7 @@ public class Validator {
             } else {
                 // Invalid
                 hub.sendToOne(
-                        hub.getCurrentPlayer(),
+                        hub.getCurrentPlayerName(),
                         "The card "
                         + now.getCard(0).toString()
                         + " is invalid because it is currently not a single card pile.");
@@ -377,7 +377,7 @@ public class Validator {
                     if (now.getCard(i).getValue() != now.getCard(i + 1).getValue()) {
                         // Invalid
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The card "
                                 + now.getCard(0).toString()
                                 + " and "
@@ -397,7 +397,7 @@ public class Validator {
                     if (now.getCard(i).getValue() != now.getCard(i + 1).getValue()) {
                         // Invalid
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The card "
                                 + now.getCard(0).toString()
                                 + " and "
@@ -409,7 +409,7 @@ public class Validator {
                             || (reversi && (now.getCard(i).getValue() >= previous.getCard(i).getValue()))) && now.getCard(i).getValue() != Card.JOKER) {
                         // Invalid card must be lower/higher value or be two jokers
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The card "
                                 + now.getCard(0).toString()
                                 + " and "
@@ -422,7 +422,7 @@ public class Validator {
                         // Invalid shibars is on so card must be same as
                         // previous
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The card "
                                 + now.getCard(0).toString()
                                 + " and "
@@ -434,7 +434,7 @@ public class Validator {
                     } else if (geki && ((!reversi && now.getCard(0).getValue() != previous.getCard(0).getValue() + 1)
                             || (reversi && now.getCard(0).getValue() + 1 != previous.getCard(0).getValue()))) {
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The cards are invalid because the pile is currently in geki shiba mode.");
                         invalid = true;
                         return;
@@ -443,7 +443,7 @@ public class Validator {
             } else {
                 // Invalid
                 hub.sendToOne(
-                        hub.getCurrentPlayer(),
+                        hub.getCurrentPlayerName(),
                         "The card "
                         + now.getCard(0).toString()
                         + " and "
@@ -496,7 +496,7 @@ public class Validator {
             if (!threeCardValid) {
                 // Invalid because it wasn't a same value or kaidan
                 hub.sendToOne(
-                        hub.getCurrentPlayer(),
+                        hub.getCurrentPlayerName(),
                         "The cards are invalid because they do not have the same value or they are not a kaidan.");
                 invalid = true;
                 return;
@@ -543,7 +543,7 @@ public class Validator {
                     if ((!reversi && (now.getCard(i).getValue() <= previous.getCard(i).getValue()))
                             || (reversi && (now.getCard(i).getValue() >= previous.getCard(i).getValue()))) {
                         // Invalid card must be lower/higher value
-                        hub.sendToOne(hub.getCurrentPlayer(),
+                        hub.sendToOne(hub.getCurrentPlayerName(),
                                 "The cards are invalid because they must have a higher/lower value.");
                         invalid = true;
                         return;
@@ -553,14 +553,14 @@ public class Validator {
                         // Invalid shibars is on so card must be same as
                         // previous
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The cards are invalid because they must be have the same suit as the previous hand played.");
                         invalid = true;
                         return;
                     } else if (geki && ((!reversi && now.getCard(0).getValue() != previous.getCard(0).getValue() + 1)
                             || (reversi && now.getCard(0).getValue() + 1 != previous.getCard(0).getValue()))) {
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The cards are invalid because the pile is currently in geki shiba mode.");
                         invalid = true;
                         return;
@@ -568,7 +568,7 @@ public class Validator {
                             i + 1).getSuit()) && (now.getCard(i).getValue() + 1 != now.getCard(i + 1).getValue()))) {
                         // Invalid as previous is kaidan but this hand isn't
                         hub.sendToOne(
-                                hub.getCurrentPlayer(),
+                                hub.getCurrentPlayerName(),
                                 "The cards are invalid because they are not a legitimate kaidan.");
                         invalid = true;
                         return;
@@ -581,7 +581,7 @@ public class Validator {
                     invalid = false;
                 }
             } else {
-                hub.sendToOne(hub.getCurrentPlayer(),
+                hub.sendToOne(hub.getCurrentPlayerName(),
                         "The cards are invalid because it is not currently a "
                         + length + "-card pile.");
                 invalid = true;
@@ -617,7 +617,7 @@ public class Validator {
         }
 
         if (nineMessage) {
-            hub.sendToAll(hub.getCurrentPlayer() + " plays two or more 9's.");
+            hub.sendToAll(hub.getCurrentPlayerName() + " plays two or more 9's.");
         }
 
         /* Method for testings the shibars */
@@ -675,9 +675,9 @@ public class Validator {
         }
 
         if (eightMessage) {
-            hub.sendToAll(hub.getCurrentPlayer() + " plays one or more 8's.");
+            hub.sendToAll(hub.getCurrentPlayerName() + " plays one or more 8's.");
         } else if (fiveMessage) {
-            hub.sendToAll(hub.getCurrentPlayer() + " plays one or more 5's; your turn might have been skipped.");
+            hub.sendToAll(hub.getCurrentPlayerName() + " plays one or more 5's; your turn might have been skipped.");
         }
 
     }
@@ -698,8 +698,8 @@ public class Validator {
 
             getPlayerHands().get(hub.getCurrentPlayerIndex()).removeCard(now.getCard(i));
 
-            hub.sendToOne(hub.getCurrentPlayer(), "You give " + hub.getNextPlayer() + " the " + now.getCard(i).toString() + ".");
-            hub.sendToOne(hub.getNextPlayer(), hub.getCurrentPlayer() + " gives you the " + now.getCard(i).toString()
+            hub.sendToOne(hub.getCurrentPlayerName(), "You give " + hub.getNextPlayerName() + " the " + now.getCard(i).toString() + ".");
+            hub.sendToOne(hub.getNextPlayerName(), hub.getCurrentPlayerName() + " gives you the " + now.getCard(i).toString()
                     + ".");
         }
 
@@ -725,11 +725,11 @@ public class Validator {
         // twice.
         throwCount = 0; // Can only throw once, set back to 0.
 
-        hub.sendToOne(hub.getCurrentPlayer(), "You throw away " + now.getCardCount() + " card(s).");
+        hub.sendToOne(hub.getCurrentPlayerName(), "You throw away " + now.getCardCount() + " card(s).");
         for (String player : hub.getPlayerList()) {
             /* If the player is not equal to the current player */
-            if (player == null ? hub.getCurrentPlayer() != null : !player.equals(hub.getCurrentPlayer())) {
-                hub.sendToOne(player, hub.getCurrentPlayer() + " throws away " + now.getCardCount()
+            if (player == null ? hub.getCurrentPlayerName() != null : !player.equals(hub.getCurrentPlayerName())) {
+                hub.sendToOne(player, hub.getCurrentPlayerName() + " throws away " + now.getCardCount()
                         + " card(s).");
             }
         }
@@ -759,7 +759,7 @@ public class Validator {
                     previous.addCard(handt.getCard(j));
                 }
 
-                hub.sendToAll(hub.getCurrentPlayer() + " ends with the following cards:");
+                hub.sendToAll(hub.getCurrentPlayerName() + " ends with the following cards:");
 
                 for (int k = 0; k < previous.getCardCount(); k++) {
                     hub.sendToAll(previous.getCard(k).toString());
@@ -767,8 +767,8 @@ public class Validator {
 
                 /* If chombo do not update the points */
                 if (chombo) {
-                    hub.updatePoints(hub.getCurrentPlayer(), -10);
-                    hub.sendToAll(hub.getCurrentPlayer() + " ends with an invalid card (chombo): -10 points!");
+                    hub.updatePoints(hub.getCurrentPlayerName(), -10);
+                    hub.sendToAll(hub.getCurrentPlayerName() + " ends with an invalid card (chombo): -10 points!");
                     restart();
                     return;
                 }
@@ -780,32 +780,32 @@ public class Validator {
                 int updatedPoints = 0;
 
                 try {
-                    currentPoints = hub.getTracker().getPoints(hub.getCurrentPlayer());
+                    currentPoints = hub.getTracker().getPoints(hub.getCurrentPlayerName());
                 } catch (Exception ex) {
                     Logger.getLogger(Validator.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
                 if (connectedPlayersID.length == 2) {
-                    hub.sendToAll(hub.getCurrentPlayer() + " wins a two player game: +" + (winPoints / 2) + " points!");
-                    hub.updatePoints(hub.getCurrentPlayer(), (winPoints / 2));
+                    hub.sendToAll(hub.getCurrentPlayerName() + " wins a two player game: +" + (winPoints / 2) + " points!");
+                    hub.updatePoints(hub.getCurrentPlayerName(), (winPoints / 2));
                 } else {
-                    hub.sendToAll(hub.getCurrentPlayer() + " wins: +" + (winPoints + (((connectedPlayersID.length * 10) - 30) / 2)) + " points!");
-                    hub.updatePoints(hub.getCurrentPlayer(), winPoints + (((connectedPlayersID.length * 10) - 30) / 2));
+                    hub.sendToAll(hub.getCurrentPlayerName() + " wins: +" + (winPoints + (((connectedPlayersID.length * 10) - 30) / 2)) + " points!");
+                    hub.updatePoints(hub.getCurrentPlayerName(), winPoints + (((connectedPlayersID.length * 10) - 30) / 2));
                 }
 
                 try {
-                    updatedPoints = hub.getTracker().getPoints(hub.getCurrentPlayer());
+                    updatedPoints = hub.getTracker().getPoints(hub.getCurrentPlayerName());
                 } catch (Exception ex) {
                     Logger.getLogger(Validator.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
                 if (currentPoints < 300 && updatedPoints > 300) {
-                    hub.sendToAll(hub.getCurrentPlayer() + " has now been granted access to the following rooms: Himajin, One-on-One, and Blitz.");
-                    hub.sendToOne(hub.getPlayerID(i), "You have now unlocked a secret feature: sort by suit. "
+                    hub.sendToAll(hub.getCurrentPlayerName() + " has now been granted access to the following rooms: Himajin, One-on-One, and Blitz.");
+                    hub.sendToOne(hub.getPlayerName(i), "You have now unlocked a secret feature: sort by suit. "
                             + "By typing into the chat input box \"sort by suit,\" you can now sort your cards according to their suit. "
                             + "If you wish to switch back to the normal mode, just type \"sort by value\" into the chat input box.");
                 } else if (currentPoints < 100 && updatedPoints > 100) {
-                    hub.sendToAll(hub.getCurrentPlayer() + " has now been granted access to the following room: Amateur.");
+                    hub.sendToAll(hub.getCurrentPlayerName() + " has now been granted access to the following room: Amateur.");
                 }
 
                 restart();
@@ -814,11 +814,11 @@ public class Validator {
         }
 
         if (!played) {
-            hub.sendToOne(hub.getCurrentPlayer(), "You skip your turn.");
+            hub.sendToOne(hub.getCurrentPlayerName(), "You skip your turn.");
             for (String player : hub.getPlayerList()) {
                 /* If the player is not equal to the current player */
-                if (player == null ? hub.getCurrentPlayer() != null : !player.equals(hub.getCurrentPlayer())) {
-                    hub.sendToOne(player, hub.getCurrentPlayer() + " skips his or her turn.");
+                if (player == null ? hub.getCurrentPlayerName() != null : !player.equals(hub.getCurrentPlayerName())) {
+                    hub.sendToOne(player, hub.getCurrentPlayerName() + " skips his or her turn.");
                 }
             }
             skipped++;
@@ -827,7 +827,7 @@ public class Validator {
         }
 
         /* If all players skip their turn */
-        if (skipped == (hub.getPlayerListLength() - 1)) {
+        if (skipped == (hub.getNumberOfConnectedPlayers() - 1)) {
             /* Throw all cards on the table into discard pile */
             restartPile();
         } else {
@@ -862,8 +862,8 @@ public class Validator {
              * Algorithm to take care of gotobashi. SwitchTurn until gotobashi
              * goes to -1 or goes back to your turn
              */
-            int players = hub.getPlayerListLength();
-            String previousCurrentPlayerID = hub.getCurrentPlayer();
+            int players = hub.getNumberOfConnectedPlayers();
+            String previousCurrentPlayerID = hub.getCurrentPlayerName();
             int counter = 0;
             skipped--;
             do {
@@ -875,7 +875,7 @@ public class Validator {
                 counter++;
             } while (gotobashi > -1);
             gotobashi = 0;
-            String nowCurrentPlayerID = hub.getCurrentPlayer();
+            String nowCurrentPlayerID = hub.getCurrentPlayerName();
             /* Restart Pile if you gotobashi'ed back to yourself */
             if (previousCurrentPlayerID == null ? nowCurrentPlayerID == null : previousCurrentPlayerID.equals(nowCurrentPlayerID)) {
                 restartPile();
@@ -900,7 +900,7 @@ public class Validator {
         hub.sendToAll("reset");
         String[] players = hub.getPlayerList();
         for (String player : players) {
-            hub.sendToOne(player, new DaifugoState(hub.getCurrentPlayer(), connectedPlayersID, null, handt, table, handd, DaifugoState.DEAL,
+            hub.sendToOne(player, new DaifugoState(hub.getCurrentPlayerName(), connectedPlayersID, null, handt, table, handd, DaifugoState.DEAL,
                     handCount, 30, shibars, reversi, jack, geki, impossible,
                     give, away, played));
         }
@@ -1006,15 +1006,15 @@ public class Validator {
         hub.sendToAll(order);
 
         /* Create the number of hands equal to the number of players */
-        for (int i = 0; i < hub.getPlayerListLength(); i++) {
+        for (int i = 0; i < hub.getNumberOfConnectedPlayers(); i++) {
             getPlayerHands().add(new Hand());
         }
 
         /* Deals 14 cards to each player */
         int cardPerPlayer = 18;
-        if (hub.getPlayerListLength() > 2) {
+        if (hub.getNumberOfConnectedPlayers() > 2) {
 
-            cardPerPlayer = (54 / hub.getPlayerListLength());
+            cardPerPlayer = (54 / hub.getNumberOfConnectedPlayers());
 
         }
 

@@ -15,7 +15,7 @@ public class DaifugoHub extends Hub {
 
     private final Tracker tracker = Tracker.getInstance();
     private volatile String currentPlayer;
-    private int portRecord;
+    private final int portRecord;
     private volatile Validator validator = new Validator(this);
     static final int TEST = 23548;
     static final int BLITZ = 23549;
@@ -32,7 +32,10 @@ public class DaifugoHub extends Hub {
     public DaifugoHub(int port) throws IOException {
         super(port);
         portRecord = port;
+        configureValidatorAndPointOptions(port);
+    }
 
+    private void configureValidatorAndPointOptions(int port) {
         if (port == DaifugoHub.TEST) {
             validator.setWinPoints(30);
             validator.setTime(40);
@@ -47,13 +50,6 @@ public class DaifugoHub extends Hub {
         }
     }
 
-    /**
-     * This method is called as part of the connection setup between this hub
-     * and a client that has requested a connection.
-     *
-     * @return username
-     * @throws java.io.IOException
-     */
     @Override
     protected String extraHandshake(ObjectInputStream in, ObjectOutputStream out) throws IOException {
         try {
@@ -97,8 +93,6 @@ public class DaifugoHub extends Hub {
      * If some other type of message is received, it is handled by the
      * messageReceived() method in the superclass (which will wrap it in a
      * ForwardedMessage and send it to all connected clients).
-     *
-     * @param playerID
      */
     @Override
     protected void messageReceived(String playerID, Object message) {
@@ -108,13 +102,13 @@ public class DaifugoHub extends Hub {
             setAutoreset(true);
             getValidator().deal(playerID);
         } else if (message.equals("pass2357")) {
-            if (getCurrentPlayer() == null ? playerID != null : !currentPlayer.equals(playerID)) {
+            if (getCurrentPlayerName() == null ? playerID != null : !currentPlayer.equals(playerID)) {
                 sendToOne(playerID, "It is not your turn.");
                 return;
             }
             getValidator().ending();
         } else if (message instanceof Hand) {
-            if (getCurrentPlayer() == null ? playerID != null : !currentPlayer.equals(playerID)) {
+            if (getCurrentPlayerName() == null ? playerID != null : !currentPlayer.equals(playerID)) {
                 sendToOne(playerID, "It is not your turn.");
                 return;
             }
@@ -124,13 +118,13 @@ public class DaifugoHub extends Hub {
                 Logger.getLogger(DaifugoHub.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (message instanceof Card) {
-            if (getCurrentPlayer() == null ? playerID != null : !currentPlayer.equals(playerID)) {
+            if (getCurrentPlayerName() == null ? playerID != null : !currentPlayer.equals(playerID)) {
                 sendToOne(playerID, "It is not your turn.");
                 return;
             }
             validator.jokerReceived++; // If joker recieved, notify validator here.
             Card card = (Card) message;
-            sendToAll(getCurrentPlayer() + " replaces a joker with the " + card.toString());
+            sendToAll(getCurrentPlayerName() + " replaces a joker with the " + card.toString());
         } else if (message instanceof Boolean) {
             boolean hold = (Boolean) message;
             validator.kakumei = hold;
@@ -218,14 +212,13 @@ public class DaifugoHub extends Hub {
         }
     }
 
-    /* Additional Functionality */
     public void sendState() {
         String[] players = this.getPlayerList();
         String[] connectedPlayers = getValidator().getConnectedPlayersID();
         if (players.length == connectedPlayers.length) {
             for (String player : players) {
-                if (getCurrentPlayer() == null ? player == null : getCurrentPlayer().equals(player)) {
-                    sendToOne(getCurrentPlayer(), getValidator().getCurrentPlayerState());
+                if (getCurrentPlayerName() == null ? player == null : getCurrentPlayerName().equals(player)) {
+                    sendToOne(getCurrentPlayerName(), getValidator().getCurrentPlayerState());
                 } else {
                     sendToOne(player, getValidator().getWaitingPlayerState(player));
                 }
@@ -237,8 +230,8 @@ public class DaifugoHub extends Hub {
                     if (connectedPlayer == null ? player == null : connectedPlayer.equals(player)) {
                         current = true;
                         /* If this block is entered, then the player is currently actually playing */
-                        if (getCurrentPlayer() == null ? player == null : getCurrentPlayer().equals(player)) {
-                            sendToOne(getCurrentPlayer(), getValidator().getCurrentPlayerState());
+                        if (getCurrentPlayerName() == null ? player == null : getCurrentPlayerName().equals(player)) {
+                            sendToOne(getCurrentPlayerName(), getValidator().getCurrentPlayerState());
                         } else {
                             sendToOne(player, getValidator().getWaitingPlayerState(player));
                         }
@@ -254,10 +247,11 @@ public class DaifugoHub extends Hub {
     }
 
     /**
-     * Restarts the server with current port
+     * This method reopens the connection on the current port to allow for more
+     * players to come in. The connection will be closed again once "start" is
+     * pressed.
      */
     public void restart() {
-        /* Reopen the connection to allow for more players to come in (will be closed again once "start" is pressed) */
         try {
             restartServer(portRecord);
         } catch (IOException ex) {
@@ -266,15 +260,14 @@ public class DaifugoHub extends Hub {
     }
 
     /**
-     * Switches to the next persons turn based on the playerID's that are
-     * currently connected. This method makes sure that the turn only goes to
-     * currently playing players
+     * Switches to the next persons turn. This method makes sure that the turn
+     * only goes to currently playing players.
      */
     public void switchTurn() {
         String[] players = getValidator().getConnectedPlayersID();
         boolean matched = false; // If no matches occured then make sure it goes to existing player
         for (int i = 0; i < players.length; i++) {
-            if (players[i] == null ? getCurrentPlayer() == null : players[i].equals(getCurrentPlayer())) {
+            if (players[i] == null ? getCurrentPlayerName() == null : players[i].equals(getCurrentPlayerName())) {
                 if (i == (players.length - 1)) {
                     setCurrentPlayer(players[0]);
                     matched = true;
@@ -291,10 +284,7 @@ public class DaifugoHub extends Hub {
         }
     }
 
-    /**
-     * @return the ID of the currentPlayer
-     */
-    public String getCurrentPlayer() {
+    public String getCurrentPlayerName() {
         return currentPlayer;
     }
 
@@ -302,22 +292,18 @@ public class DaifugoHub extends Hub {
         int index = 0;
         String[] players = getValidator().getConnectedPlayersID();
         for (int i = 0; i < players.length; i++) {
-            if (getCurrentPlayer() == null ? players[i] == null : getCurrentPlayer().equals(players[i])) {
+            if (getCurrentPlayerName() == null ? players[i] == null : getCurrentPlayerName().equals(players[i])) {
                 index = i;
             }
         }
         return index;
     }
 
-    /**
-     *
-     * @return The ID of the next Player
-     */
-    public String getNextPlayer() {
+    public String getNextPlayerName() {
         String[] players = getValidator().getConnectedPlayersID();
         String nextPlayer = players[0];
         for (int i = 0; i < players.length; i++) {
-            if (players[i] == null ? getCurrentPlayer() == null : players[i].equals(getCurrentPlayer())) {
+            if (players[i] == null ? getCurrentPlayerName() == null : players[i].equals(getCurrentPlayerName())) {
                 if (i == (players.length - 1)) {
                     nextPlayer = players[0];
                     break;
@@ -330,20 +316,11 @@ public class DaifugoHub extends Hub {
         return nextPlayer;
     }
 
-    /**
-     *
-     * @return
-     */
-    public int getPlayerListLength() {
+    public int getNumberOfConnectedPlayers() {
         return getValidator().getConnectedPlayersID().length;
     }
 
-    /**
-     *
-     * @param position The position of the player's hand
-     * @return ID The player's ID
-     */
-    public String getPlayerID(int position) {
+    public String getPlayerName(int position) {
         String[] players = this.validator.getConnectedPlayersID();
         String id = players[position];
         return id;
@@ -395,26 +372,16 @@ public class DaifugoHub extends Hub {
         }
     }
 
-    /**
-     * @return the validator
-     */
     public Validator getValidator() {
         return validator;
     }
 
-    /**
-     * @return the tracker
-     */
     public Tracker getTracker() {
         return tracker;
     }
 
-    /**
-     * @param currentPlayer the currentPlayer to set
-     */
     public void setCurrentPlayer(String currentPlayer) {
         this.currentPlayer = currentPlayer;
     }
-
 
 }

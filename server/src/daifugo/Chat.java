@@ -143,10 +143,10 @@ public class Chat extends JFrame {
             this.addToTranscript("The number of points on win has been changed to " + points + " points.");
             return true;
         } else if (message.startsWith("current player")) {
-            this.addToTranscript("Current player is " + (hub.getCurrentPlayer()) + ".");
+            this.addToTranscript("Current player is " + (hub.getCurrentPlayerName()) + ".");
             return true;
         } else if (message.startsWith("connected players")) {
-            this.addToTranscript("Number of connected players: " + hub.getPlayerListLength() + ".");
+            this.addToTranscript("Number of connected players: " + hub.getNumberOfConnectedPlayers() + ".");
             return true;
         } else if (message.startsWith("reveal")) {
             if (hub.getValidator().getPlayerHands().isEmpty()) {
