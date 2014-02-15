@@ -780,7 +780,7 @@ public class Validator {
                 int updatedPoints = 0;
 
                 try {
-                    currentPoints = hub.getTracker().getPoints(hub.getCurrentPlayerName());
+                    currentPoints = hub.getTracker().getRegularPoints(hub.getCurrentPlayerName());
                 } catch (Exception ex) {
                     Logger.getLogger(Validator.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -794,7 +794,7 @@ public class Validator {
                 }
 
                 try {
-                    updatedPoints = hub.getTracker().getPoints(hub.getCurrentPlayerName());
+                    updatedPoints = hub.getTracker().getRegularPoints(hub.getCurrentPlayerName());
                 } catch (Exception ex) {
                     Logger.getLogger(Validator.class.getName()).log(Level.SEVERE, null, ex);
                 }

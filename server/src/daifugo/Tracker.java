@@ -13,9 +13,13 @@ public final class Tracker {
     private Document xmldoc;
     private ArrayList<Player> players;
     private final String userhome = System.getProperty("user.home");
-    private File newAccount;
 
     private static final Tracker INSTANCE = new Tracker();
+
+    private enum Mode {
+
+        TOURNAMENT, REGULAR;
+    }
 
     private Tracker() {
         if (INSTANCE != null) {
@@ -28,7 +32,16 @@ public final class Tracker {
         return INSTANCE;
     }
 
-    public int getTournament(String username) throws Exception {
+    public int getTournamentPoints(String username) throws Exception {
+        return getPoints(username, Mode.TOURNAMENT);
+    }
+
+    public int getRegularPoints(String username) throws Exception {
+        return getPoints(username, Mode.REGULAR);
+
+    }
+
+    private int getPoints(String username, Mode mode) throws Exception, NumberFormatException {
         Element root = xmldoc.getRootElement();
         int tournament = -1;
         if (!root.getName().equalsIgnoreCase("daifugo")) {
@@ -39,17 +52,22 @@ public final class Tracker {
             Element element = nodes.get(i);
             if (element.getName().equalsIgnoreCase("player")) {
                 if (username.equalsIgnoreCase(element.getChildText("username"))) {
-                    tournament = Integer.parseInt(element.getChild("tournament").getText());
+                    tournament = Integer.parseInt(element.getChild(mode.name().toLowerCase()).getText());
                 }
             }
         }
         return tournament;
     }
 
-    /**
-     * Method called to update the tournament points of a player
-     */
-    public synchronized void updateTournament(String username, int change) throws Exception {
+    public synchronized void updateTournamentPoints(String username, int change) throws Exception {
+        updatePoints(username, change, Mode.TOURNAMENT);
+    }
+
+    public synchronized void updateRegularPoints(String username, int change) throws Exception {
+        updatePoints(username, change, Mode.REGULAR);
+    }
+
+    private void updatePoints(String username, int change, Mode mode) throws Exception, NumberFormatException {
         Element root = xmldoc.getRootElement();
         if (!root.getName().equalsIgnoreCase("daifugo")) {
             throw new Exception("Incompatbile File");
@@ -61,45 +79,7 @@ public final class Tracker {
                 if (username.equalsIgnoreCase(element.getChildText("username"))) {
                     int past = Integer.parseInt(element.getChild("tournament").getText());
                     int current = past + change;
-                    element.getChild("tournament").setText(String.valueOf(current));
-                }
-            }
-        }
-        writeXML();
-        readXML();
-    }
-
-    public int getPoints(String username) throws Exception {
-        Element root = xmldoc.getRootElement();
-        int points = -1;
-        if (!root.getName().equalsIgnoreCase("daifugo")) {
-            throw new Exception("Incompatbile File");
-        }
-        List<Element> nodes = root.getChildren();
-        for (int i = 0; i < nodes.size(); i++) {
-            Element element = (Element) nodes.get(i);
-            if (element.getName().equalsIgnoreCase("player")) {
-                if (username.equalsIgnoreCase(element.getChildText("username"))) {
-                    points = Integer.parseInt(element.getChild("points").getText());
-                }
-            }
-        }
-        return points;
-    }
-
-    public synchronized void updatePoints(String username, int change) throws Exception {
-        Element root = xmldoc.getRootElement();
-        if (!root.getName().equalsIgnoreCase("daifugo")) {
-            throw new Exception("Incompatbile File");
-        }
-        List<Element> nodes = root.getChildren();
-        for (int i = 0; i < nodes.size(); i++) {
-            Element element = (Element) nodes.get(i);
-            if (element.getName().equalsIgnoreCase("player")) {
-                if (username.equalsIgnoreCase(element.getChildText("username"))) {
-                    int past = Integer.parseInt(element.getChild("points").getText());
-                    int current = past + change;
-                    element.getChild("points").setText(String.valueOf(current));
+                    element.getChild(mode.name().toLowerCase()).setText(String.valueOf(current));
                 }
             }
         }
@@ -108,49 +88,52 @@ public final class Tracker {
     }
 
     /**
-     * See if the username and password are valid
+     * This method make sure that the username matches password and that the
+     * player is not currently logged in.
      *
-     * Note: Rooms can be closed by making the amount of needed points equal to
-     * -1.
-     *
-     * @param name
-     * @param password
-     * @param port
-     * @return Message to tell if user was authenticated or what kind of error
-     * the user activated.
+     * @return Authentication feedback message.
      */
     public String authenticate(String name, String password, int port) {
         if (port == DaifugoHub.ACCOUNT) {
-            String regex = "^[A-Z][A-Za-z\\s]{1,10}$";
-            if (!name.isEmpty() && !password.isEmpty() && name.matches(regex)) {
-                for (Player player: players) {
-                    if (player.getUsername().equals(name)) {
-                        return "duplicateAccountCreation"; 
-                    }
+            return handleAccountCreation(name, password);
+        }
+        return handleAccountAuthentication(port, name, password);
+    }
+
+    private String handleAccountCreation(String name, String password) {
+        String regex = "[A-Za-z0-9\\s]{1,10}$";
+        if (!name.isEmpty() && !password.isEmpty() && name.matches(regex)) {
+            for (Player player : players) {
+                if (player.getUsername().equals(name)) {
+                    return "duplicateAccountCreation";
                 }
-                Element player = new Element("player");
-                Element usernameElement = new Element("username").setText(name);
-                Element passwordElement = new Element("password").setText(password);
-                Element pointsElement = new Element("points").setText("0");
-                Element tournamentElement = new Element("tournament").setText("0");
-                player.addContent(usernameElement);
-                player.addContent(passwordElement);
-                player.addContent(pointsElement);
-                player.addContent(tournamentElement);
-                Element root = xmldoc.getRootElement();
-                root.addContent(player);
-                writeXML();
-                readXML();
-                return "accountCreated";
             }
-            return "failedAccountCreation";
+            Element player = createPlayerElement(name, password);
+            Element root = xmldoc.getRootElement();
+            root.addContent(player);
+            writeXML();
+            readXML();
+            return "accountCreated";
         }
+        return "failedAccountCreation";
+    }
+
+    private Element createPlayerElement(String name, String password) {
+        Element player = new Element("player");
+        Element usernameElement = new Element("username").setText(name);
+        Element passwordElement = new Element("password").setText(password);
+        Element pointsElement = new Element("points").setText("0");
+        Element tournamentElement = new Element("tournament").setText("0");
+        player.addContent(usernameElement);
+        player.addContent(passwordElement);
+        player.addContent(pointsElement);
+        player.addContent(tournamentElement);
+        return player;
+    }
+
+    private String handleAccountAuthentication(int port, String name, String password) {
         int points = neededPoints(port);
-        if (points == -1) {
-            return "closedError";
-        }
         for (Player p : players) {
-            /* Make sure username matches password and that the player is not currently logged in */
             if (p.getUsername().equals(name)) {
                 if (p.getPassword().equals(password)) {
                     if (!p.isPlaying()) {
@@ -182,10 +165,6 @@ public final class Tracker {
         }
     }
 
-    /**
-     * Called after the updatePoints method to write the new values to the XML
-     * file
-     */
     private synchronized void writeXML() {
         PrintWriter out;
         try {
@@ -238,30 +217,18 @@ public final class Tracker {
         }
     }
 
-    /**
-     * Returns the needed points for each port. Returns -1 if room is closed.
-     *
-     * @param port
-     * @return
-     */
     private int neededPoints(int port) {
-//        if (port == DaifugoHub.NEOPHYTE) {
-//            return -200;
-//        } else if (port == DaifugoHub.AMATEUR) {
-//            return 100;
-//        } else if (port == DaifugoHub.HIMAJIN) {
-//            return 300;
-//        } else if (port == DaifugoHub.TOURNAMENT) {
-//            return -30;
-//        } else {
-//            return 0;
-//        }
-        return -50;
+        if (port == DaifugoHub.TEST) {
+            return -200;
+        } else if (port == DaifugoHub.BLITZ) {
+            return -30;
+        } else if (port == DaifugoHub.TOURNAMENT) {
+            return -30;
+        } else {
+            return -1;
+        }
     }
 
-    /**
-     * @return the userhome
-     */
     public String getUserhome() {
         return userhome;
     }

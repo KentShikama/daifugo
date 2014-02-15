@@ -177,9 +177,9 @@ public class DaifugoHub extends Hub {
                     getValidator().restart();
                     try {
                         if (tournament) {
-                            getTracker().updateTournament(playerID, -10);
+                            getTracker().updateTournamentPoints(playerID, -10);
                         } else {
-                            getTracker().updatePoints(playerID, -10);
+                            getTracker().updateRegularPoints(playerID, -10);
                         }
                     } catch (Exception ex) {
                         Logger.getLogger(DaifugoHub.class.getName()).log(Level.SEVERE, null, ex);
@@ -192,9 +192,9 @@ public class DaifugoHub extends Hub {
                     getValidator().restart();
                     try {
                         if (tournament) {
-                            getTracker().updateTournament(playerID, -10);
+                            getTracker().updateTournamentPoints(playerID, -10);
                         } else {
-                            getTracker().updatePoints(playerID, -10);
+                            getTracker().updateRegularPoints(playerID, -10);
                         }
                     } catch (Exception ex) {
                         Logger.getLogger(DaifugoHub.class.getName()).log(Level.SEVERE, null, ex);
@@ -329,18 +329,18 @@ public class DaifugoHub extends Hub {
     public void updatePoints(String winnerID, int change) {
         try {
             if (!tournament) {
-                getTracker().updatePoints(winnerID, change);
+                getTracker().updateRegularPoints(winnerID, change);
             } else {
                 Calendar tokyo = Calendar.getInstance();
                 tokyo.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
                 int hour = tokyo.get(Calendar.HOUR_OF_DAY);
                 int day = tokyo.get(Calendar.DAY_OF_MONTH);
                 if (hour == 21 && (day % 2 == 0)) {
-                    getTracker().updateTournament(winnerID, change);
+                    getTracker().updateTournamentPoints(winnerID, change);
                 } else if (hour == 20 && (day % 2 == 1)) {
-                    getTracker().updateTournament(winnerID, change);
+                    getTracker().updateTournamentPoints(winnerID, change);
                 } else {
-                    getTracker().updateTournament(winnerID, 0);
+                    getTracker().updateTournamentPoints(winnerID, 0);
                     sendToAll("It is currently not tournament hour. No points were added or deducted.");
                 }
             }
@@ -356,14 +356,14 @@ public class DaifugoHub extends Hub {
                 String[] players = this.getPlayerList();
                 TreeMap<String, Integer> pointCount = new TreeMap<>();
                 for (int i = 0; i < players.length; i++) {
-                    pointCount.put(players[i], getTracker().getPoints(players[i]));
+                    pointCount.put(players[i], getTracker().getRegularPoints(players[i]));
                 }
                 sendToAll(new PlayerState(pointCount));
             } else {
                 String[] players = this.getPlayerList();
                 TreeMap<String, Integer> pointCount = new TreeMap<>();
                 for (String player : players) {
-                    pointCount.put(player, getTracker().getTournament(player));
+                    pointCount.put(player, getTracker().getTournamentPoints(player));
                 }
                 sendToAll(new PlayerState(pointCount));
             }
