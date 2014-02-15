@@ -3,7 +3,6 @@ package daifugo;
 /**
  * This class updates the chat box based on the updates sent by the client. This
  * class also sends messages that the user input to the client.
- *
  */
 public class ChatController {
 
@@ -55,11 +54,20 @@ public class ChatController {
             return;
         }
 
-        /**
-         * Allow user to sort based on his or her preferences. The cards update
-         * when a new state is sent. This method makes sure the client has
-         * enough points to have this feature activated.
-         */
+        if (handleSortingPreferences(message)) {
+            return;
+        }
+
+        this.client.send(message);
+        this.display.getInput().setText("");
+    }
+
+    /**
+     * Allow user to sort based on his or her preferences. The cards update when
+     * a new state is sent. This method makes sure the client has enough points
+     * to have this feature activated.
+     */
+    private boolean handleSortingPreferences(String message) {
         if (message.equals("sort by suit")) {
             if (this.client.tableController.getClientPoints() > 300) {
                 this.client.tableController.setSortBySuit(true);
@@ -68,15 +76,13 @@ public class ChatController {
                 addToTranscript("Esoteric: You must unlock this feature.");
             }
             this.display.getInput().setText("");
-            return;
+            return true;
         } else if (message.equals("sort by value")) {
             this.client.tableController.setSortBySuit(false);
             addToTranscript("Esoteric: You have set the cards to be sorted according to their values. The cards will be updated after this turn finishes.");
             this.display.getInput().setText("");
-            return;
+            return true;
         }
-
-        this.client.send(message);
-        this.display.getInput().setText("");
+        return false;
     }
 }

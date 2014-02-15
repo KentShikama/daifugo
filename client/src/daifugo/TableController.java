@@ -40,7 +40,6 @@ public class TableController {
      */
     void newState(DaifugoState state) {
         this.state = state;
-
         this.discard = null;
 
         this.controls.getStart().setEnabled(state.status == DaifugoState.DEAL);
@@ -59,7 +58,7 @@ public class TableController {
             updateCardCount(this.state.opc);
 
             handleBorderColor(this.state.currentPlayerID, this.state.connectedPlayersID);
-            
+
             handleRestrictions();
 
             this.controls.getRemaining().setEnabled(true);
@@ -138,9 +137,8 @@ public class TableController {
     }
 
     void place() {
-        boolean valid = false;
-        valid = process(this.discard);
-        if ((this.now.getCardCount() == 0) && (valid)) {
+        boolean valid = process(this.discard);
+        if ((this.now.getCardCount() == 0) && valid) {
             this.client.send("pass2357");
             return;
         }
@@ -230,10 +228,7 @@ public class TableController {
 
     /**
      * The naming system of the rankings is based on the complexity of the
-     * kingdoms (with a few exceptions).
-     *
-     * @param points The number of points the player has
-     * @return The name of the rank
+     * kingdoms.
      */
     String rank(int points) {
         if (points < -150) {
@@ -473,16 +468,10 @@ public class TableController {
         return visitingPlayers;
     }
 
-    /**
-     * @param sortBySuit the sortBySuit to set
-     */
     public void setSortBySuit(boolean sortBySuit) {
         this.sortBySuit = sortBySuit;
     }
 
-    /**
-     * @return the clientPoints
-     */
     public int getClientPoints() {
         return clientPoints;
     }
