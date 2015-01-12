@@ -1,0 +1,24 @@
+apply plugin: "java"
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'lib', include: '*.jar')
+}
+
+jar {
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    
+    manifest {
+        attributes(
+                "Manifest-Version" : "1.0",
+                "Main-Class": "daifugo/HubMain"
+        )
+    }
+}

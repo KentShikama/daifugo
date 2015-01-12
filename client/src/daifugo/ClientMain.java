@@ -19,7 +19,7 @@ public class ClientMain {
      * Modify this IP address in order to readPortAndConnect to proper host. If
      * you plan to test the application from you own computer, use localhost.
      */
-    private static final String HOST = "localhost"; //162.243.121.40
+    private static final String HOST = "localhost"; // 104.236.61.239
     
     private static final int TEST = 23548;
     private static final int BLITZ = 23549;

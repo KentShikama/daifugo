@@ -458,6 +458,10 @@ public abstract class Hub {
                     } else {
                         throw new Exception("Not a valid username or password, not enough points, etc");
                     }
+                    if (authenticated.equals("accountCreated")) {
+                        System.out.println("A new account has been created on Daifugo.");
+                        return;
+                    }
                     acceptConnection(ConnectionToClient.this);
                     receiveThread = new ReceiveThread();
                     receiveThread.start();

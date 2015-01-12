@@ -17,7 +17,6 @@ public final class Tracker {
     private static final Tracker INSTANCE = new Tracker();
 
     private enum Mode {
-
         TOURNAMENT, REGULAR;
     }
 
@@ -43,7 +42,7 @@ public final class Tracker {
 
     private int getPoints(String username, Mode mode) throws Exception, NumberFormatException {
         Element root = xmldoc.getRootElement();
-        int tournament = -1;
+        int points = -1;
         if (!root.getName().equalsIgnoreCase("daifugo")) {
             throw new Exception("Incompatbile File");
         }
@@ -52,11 +51,11 @@ public final class Tracker {
             Element element = nodes.get(i);
             if (element.getName().equalsIgnoreCase("player")) {
                 if (username.equalsIgnoreCase(element.getChildText("username"))) {
-                    tournament = Integer.parseInt(element.getChild(mode.name().toLowerCase()).getText());
+                    points = Integer.parseInt(element.getChild(mode.name().toLowerCase()).getText());
                 }
             }
         }
-        return tournament;
+        return points;
     }
 
     public synchronized void updateTournamentPoints(String username, int change) throws Exception {
@@ -87,12 +86,6 @@ public final class Tracker {
         readXML();
     }
 
-    /**
-     * This method make sure that the username matches password and that the
-     * player is not currently logged in.
-     *
-     * @return Authentication feedback message.
-     */
     public String authenticate(String name, String password, int port) {
         if (port == DaifugoHub.ACCOUNT) {
             return handleAccountCreation(name, password);
@@ -186,16 +179,45 @@ public final class Tracker {
         players = new ArrayList<>();
         tracker = new File(getUserhome() + "/daifugo.xml");
         try {
+            boolean isNew = tracker.createNewFile(); // Create file if it doesn't exist
+            if (isNew) {
+                BufferedWriter writer = null;
+                try {
+                    writer = new BufferedWriter(new FileWriter(tracker));
+                    writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<daifugo>\n" +
+                            "  <player>\n" +
+                            "    <username>player1</username>\n" +
+                            "    <password>1234</password>\n" +
+                            "    <points>0</points>\n" +
+                            "    <tournament>0</tournament>\n" +
+                            "  </player>\n" +
+                            "  <player>\n" +
+                            "    <username>player2</username>\n" +
+                            "    <password>1234</password>\n" +
+                            "    <points>0</points>\n" +
+                            "    <tournament>0</tournament>\n" +
+                            "  </player>\n" +
+                            "</daifugo>\n");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    writer.close();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
             SAXBuilder builder = new SAXBuilder();
             xmldoc = builder.build(tracker);
-
         } catch (IOException | JDOMException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
         try {
             readDocument(xmldoc);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 

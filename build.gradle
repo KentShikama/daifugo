@@ -1,0 +1,3 @@
+allprojects {
+    task hello << { task -> println "Includes $task.project.name" }
+}

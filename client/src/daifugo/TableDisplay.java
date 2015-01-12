@@ -37,7 +37,7 @@ public class TableDisplay extends JFrame {
     TableDisplay(TableController controller) {
         this.controller = controller;
         try {
-            URL resource = TableDisplay.class.getResource("parts/cards.png");
+            URL resource = TableDisplay.class.getResource("/cards.png");
             this.cardImages = ImageIO.read(resource);
         } catch (IOException e) {
             System.out.println("Error reading image: " + e.getMessage());

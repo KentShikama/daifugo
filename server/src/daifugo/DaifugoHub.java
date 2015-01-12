@@ -23,12 +23,6 @@ public class DaifugoHub extends Hub {
     static final int ACCOUNT = 23551;
     private boolean tournament = false;
 
-    /**
-     * Creates a DaifugoHub.
-     *
-     * @param port the port on which to listen for connections
-     * @throws IOException if it is not possible to create a listening socket
-     */
     public DaifugoHub(int port) throws IOException {
         super(port);
         portRecord = port;
@@ -59,7 +53,7 @@ public class DaifugoHub extends Hub {
             switch (authentic) {
                 case "accountCreated":
                     out.writeObject("successAccount");
-                    throw new IOException(name + " and " + password + " has attempted to create an account.");
+                    return "accountCreated";
                 case "failedAccountCreation":
                     out.writeObject("failAccount");
                     throw new IOException(name + " and " + password + " has failed to create an account.");
