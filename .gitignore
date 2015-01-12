@@ -4,3 +4,4 @@ client/.gradle/
 client/build
 server/.gradle/
 server/build
+jdom-2.0.5.jar
