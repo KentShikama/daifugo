@@ -135,7 +135,7 @@ public class TableDisplay extends JFrame {
         client.add(nameLabel);
         client.add(pointLabel);
         client.add(remainingCards);
-        getClientPanels().add(client);
+        this.clientPanels.add(client);
     }
 
     private void windowQuit() {
@@ -144,7 +144,7 @@ public class TableDisplay extends JFrame {
 
     public void redrawClients() {
         this.topPanel.removeAll();
-        for (JPanel client : getClientPanels()) {
+        for (JPanel client : this.clientPanels) {
             this.topPanel.add(client);
         }
         this.topPanel.repaint();

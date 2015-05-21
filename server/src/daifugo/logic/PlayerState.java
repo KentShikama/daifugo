@@ -8,7 +8,7 @@ import java.util.TreeMap;
  */
 public class PlayerState implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     public TreeMap<Integer, Integer> pointCount;
 
     public PlayerState(TreeMap pointCount) {

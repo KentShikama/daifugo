@@ -17,7 +17,7 @@ public final class Tracker {
     private static final Tracker INSTANCE = new Tracker();
 
     private enum Mode {
-        TOURNAMENT, REGULAR;
+        TOURNAMENT, POINTS;
     }
 
     private Tracker() {
@@ -36,7 +36,7 @@ public final class Tracker {
     }
 
     public int getRegularPoints(String username) throws Exception {
-        return getPoints(username, Mode.REGULAR);
+        return getPoints(username, Mode.POINTS);
 
     }
 
@@ -63,7 +63,7 @@ public final class Tracker {
     }
 
     public synchronized void updateRegularPoints(String username, int change) throws Exception {
-        updatePoints(username, change, Mode.REGULAR);
+        updatePoints(username, change, Mode.POINTS);
     }
 
     private void updatePoints(String username, int change, Mode mode) throws Exception, NumberFormatException {
